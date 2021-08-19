@@ -3,10 +3,10 @@ import "@chainlink/contracts/src/v0.6/ChainlinkClient.sol";
 import {randomness_interface} from "./interfaces/randomness_interface.sol";
 import {governance_interface} from "./interfaces/governance_interface.sol";
 
-contract Lottery is ChainlinkClient {
-    enum LOTTERY_STATE { OPEN, CLOSED, CALCULATING_WINNER }
-    LOTTERY_STATE public lottery_state;
-    uint256 public lotteryId;
+contract Raffle is ChainlinkClient {
+    enum RAFFLE_STATE { OPEN, CLOSED, CALCULATING_WINNER }
+    RAFFLE_STATE public raffle_state;
+    uint256 public raffleId;
     address payable[] public players;
     governance_interface public governance;
     // .01 ETH
@@ -20,20 +20,20 @@ contract Lottery is ChainlinkClient {
     constructor(address _governance) public
     {
         setPublicChainlinkToken();
-        lotteryId = 1;
-        lottery_state = LOTTERY_STATE.CLOSED;
+        raffleId = 1;
+        raffle_state = RAFFLE_STATE.CLOSED;
         governance = governance_interface(_governance);
     }
 
     function enter() public payable {
         assert(msg.value == MINIMUM);
-        assert(lottery_state == LOTTERY_STATE.OPEN);
+        assert(raffle_state == RAFFLE_STATE.OPEN);
         players.push(msg.sender);
     } 
     
-  function start_new_lottery(uint256 duration) public {
-    require(lottery_state == LOTTERY_STATE.CLOSED, "can't start a new lottery yet");
-    lottery_state = LOTTERY_STATE.OPEN;
+  function start_new_raffle(uint256 duration) public {
+    require(raffle_state == RAFFLE_STATE.CLOSED, "can't start a new raffle yet");
+    raffle_state = RAFFLE_STATE.OPEN;
     Chainlink.Request memory req = buildChainlinkRequest(CHAINLINK_ALARM_JOB_ID, address(this), this.fulfill_alarm.selector);
     req.addUint("until", now + duration);
     sendChainlinkRequestTo(CHAINLINK_ALARM_ORACLE, req, ORACLE_PAYMENT);
@@ -43,33 +43,33 @@ contract Lottery is ChainlinkClient {
     public
     recordChainlinkFulfillment(_requestId)
       {
-        require(lottery_state == LOTTERY_STATE.OPEN, "The lottery hasn't even started!");
+        require(raffle_state == RAFFLE_STATE.OPEN, "The raffle hasn't even started!");
         // add a require here so that only the oracle contract can
         // call the fulfill alarm method
-        lottery_state = LOTTERY_STATE.CALCULATING_WINNER;
-        lotteryId = lotteryId + 1;
+        raffle_state = RAFFLE_STATE.CALCULATING_WINNER;
+        raffleId = raffleId + 1;
         pickWinner();
     }
 
 
     function pickWinner() private {
-        require(lottery_state == LOTTERY_STATE.CALCULATING_WINNER, "You aren't at that stage yet!");
-        randomness_interface(governance.randomness()).getRandom(lotteryId, lotteryId);
+        require(raffle_state == RAFFLE_STATE.CALCULATING_WINNER, "You aren't at that stage yet!");
+        randomness_interface(governance.randomness()).getRandom(raffleId, raffleId);
         //this kicks off the request and returns through fulfill_random
     }
     
     function fulfill_random(uint256 randomness) external {
-        require(lottery_state == LOTTERY_STATE.CALCULATING_WINNER, "You aren't at that stage yet!");
+        require(raffle_state == RAFFLE_STATE.CALCULATING_WINNER, "You aren't at that stage yet!");
         require(randomness > 0, "random-not-found");
         // assert(msg.sender == governance.randomness());
         uint256 index = randomness % players.length;
         players[index].transfer(address(this).balance);
         players = new address payable[](0);
-        lottery_state = LOTTERY_STATE.CLOSED;
+        raffle_state = RAFFLE_STATE.CLOSED;
         // You could have this run forever
-        // start_new_lottery();
+        // start_new_raffle();
         // or with a cron job from a chainlink node would allow you to 
-        // keep calling "start_new_lottery" as well
+        // keep calling "start_new_raffle" as well
     }
 
     function get_players() public view returns (address payable[] memory) {
@@ -80,15 +80,5 @@ contract Lottery is ChainlinkClient {
         return address(this).balance;
     }
 }
-© 2021 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Docs
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
+
+
