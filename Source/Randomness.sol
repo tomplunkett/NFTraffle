@@ -1,7 +1,7 @@
 pragma solidity 0.6.6;
 
 import "./vrf/VRFConsumerBase.sol";
-import {lottery_interface} from "./interfaces/lottery_interface.sol";
+import {raffle_interface} from "./interfaces/raffle_interface.sol";
 import {governance_interface} from "./interfaces/governance_interface.sol";
 
 contract RandomNumberConsumer is VRFConsumerBase {
@@ -50,6 +50,6 @@ contract RandomNumberConsumer is VRFConsumerBase {
         most_recent_random = randomness;
         uint lotteryId = requestIds[requestId];
         randomNumber[lotteryId] = randomness;
-        lottery_interface(governance.lottery()).fulfill_random(randomness);
+        raffle_interface(governance.raffle()).fulfill_random(randomness);
     }
 }
