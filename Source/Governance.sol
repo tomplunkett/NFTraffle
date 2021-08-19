@@ -16,4 +16,4 @@ contract Governance {
         raffle = _raffle;
     }
 }
-© 2021 GitHub, Inc.
+
